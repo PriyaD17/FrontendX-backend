@@ -8,7 +8,7 @@ const app = express();
 
 const PORT = process.env.PORT || 3001;
 app.use(cors()); 
-app.use(express.json());
+app.use(express.json({limit: '50mb'})); 
 
 const PAGESPEED_API_KEY = process.env.PAGESPEED_API_KEY;
 const PAGESPEED_ENDPOINT = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
