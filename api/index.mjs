@@ -86,7 +86,10 @@ app.post('/api/get-pagespeed-data', async (req, res) => {
 
     try {
         const pagespeedData = await getPagespeedInsights(url);
-        res.json(pagespeedData);
+        const llmInfo = extractInfoForLlm(pagespeedData);
+        res.json(llmInfo);
+        
+
     } catch (error) {
         console.error('Error in /api/get-pagespeed-data:', error);
         res.status(500).json({ error: error.message || 'An internal server error occurred.' });
@@ -101,7 +104,6 @@ app.post('/api/get-analysis', async (req, res) => {
 
     try {
         // 1. Extract relevant info for the LLM from the provided data
-        const llmInfo = extractInfoForLlm(pagespeedData);
 
         // 2. Prepare the prompt for Groq
         const systemPrompt = "You are an expert web performance engineer. Your goal is to provide a clear, concise, and actionable report based on Lighthouse data. Focus on the most impactful changes a developer can make. Use markdown for formatting.";
