@@ -34,7 +34,7 @@ function extractInfoForLlm(data) {
     const info = { summary: {}, metrics: [], opportunities: [], diagnostics: {} };
 
     const perfScore = lr.categories?.performance?.score;
-    if (perfScore !== undefined) {
+    if (typeof perfScore === 'number') {
         info.summary.performance_score = (perfScore * 100).toFixed(0);
     }
 
@@ -48,7 +48,7 @@ function extractInfoForLlm(data) {
 
     for (const auditId in audits) {
         const audit = audits[auditId];
-        if (audit.details?.type === 'opportunity' && audit.details?.overallSavingsMs > 0) {
+        if (audit.details?.type === 'opportunity' && (audit.details?.overallSavingsMs > 0 || audit.details?.overallSavingsBytes > 0)) {
             info.opportunities.push({
                 title: audit.title,
                 description: audit.description,
@@ -59,22 +59,26 @@ function extractInfoForLlm(data) {
 
     const crcDetails = audits["critical-request-chains"]?.details || {};
     if (crcDetails.chains) {
-        const longestChain = Object.values(crcDetails.chains).sort((a, b) => b.duration - a.duration)[0];
-        if (longestChain) {
-            info.diagnostics.critical_request_chains = `Longest chain has ${Object.keys(longestChain.children || {}).length + 1} requests and took ${longestChain.duration.toFixed(0)}ms`;
+        const longestChain = Object.values(crcDetails.chains).sort((a, b) => (b.duration || 0) - (a.duration || 0))[0];
+        // *** FIX IS HERE: Check if longestChain and its duration exist ***
+        if (longestChain && typeof longestChain.duration === 'number') {
+            const chainLength = Object.keys(longestChain.children || {}).length + 1;
+            info.diagnostics.critical_request_chains = `Longest chain has ${chainLength} requests and took ${longestChain.duration.toFixed(0)}ms`;
         }
     }
 
     const rsItems = audits["resource-summary"]?.details?.items || [];
     if (rsItems.length > 0) {
-        info.diagnostics.resource_summary = rsItems.map(item =>
-            `- ${item.label}: ${item.requestCount} requests, ${(item.transferSize / 1024).toFixed(0)} KB`
-        ).join('\n');
+        info.diagnostics.resource_summary = rsItems.map(item => {
+            const requestCount = item.requestCount || 0;
+            // *** FIX IS HERE: Use a default value for transferSize ***
+            const transferSizeKb = ((item.transferSize || 0) / 1024).toFixed(0);
+            return `- ${item.label}: ${requestCount} requests, ${transferSizeKb} KB`;
+        }).join('\n');
     }
 
     return info;
 }
-
 app.get('/api', (req, res) => {
     res.send('PageSpeed Groq Analyzer API is running.');
 });
