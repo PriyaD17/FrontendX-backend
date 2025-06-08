@@ -119,7 +119,7 @@ Provide a report with three sections:
 3.  **Key Metrics Overview:** A simple list of the core web vital metrics and their values.
 
 Here is the data:
-${JSON.stringify(llmInfo, null, 2)}`;
+${JSON.stringify(pagespeedData, null, 2)}`;
 
         // 3. Get the analysis from Groq
         const chatCompletion = await groq.chat.completions.create({
